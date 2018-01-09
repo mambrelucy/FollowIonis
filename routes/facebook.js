@@ -5,7 +5,6 @@ var passport = require('passport');
 /* facebook routes */
 router.get('/auth/facebook', 
   passport.authenticate('facebook', function (req, res) {
-      console.log("authenticated : " + req.isAuthenticated());
       if (req.isAuthenticated()) {
         return (next());
     }
@@ -18,7 +17,7 @@ router.get('/auth/facebook/callback',
         failureRedirect : '/errortest'
     }),
     function(req, res) {
-        res.redirect('/');
+        res.redirect('/errortest');
     }
 );
 

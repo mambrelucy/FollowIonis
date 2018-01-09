@@ -2,17 +2,103 @@
 Dashboard
 
 <%- contentFor('body') %>
-<nav class="navbar navbar-expand-lg navbar-light" style="background-color: #e4dddb">
-    <a class="navbar-brand" href="#">FollowIonis</a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-  
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav mr-auto">
-            <li class="nav-item">
-                <a class="nav-link" href="#">Link</a>
-            </li>
-        </ul>
-    </div>
-</nav>
+<div style="text-align: center; font-size: 40pt; font-weight: 150; padding-bottom:10pt">
+	FollowIonis
+</div>
+<div class="row">
+	<!-- event list -->
+	<div class="col-md-6" style="padding-left:20pt;">
+		<div class="container">
+			<div class="row">
+				<div class="[ col-xs-12 col-sm-offset-2 col-sm-12 ]">
+					<ul class="event-list">
+						<% events.forEach(function (event) { %>
+							<li>
+								<% var date_start = JSON.stringify(event.start_time) %>
+								<% var date_end = JSON.stringify(event.end_time) %>
+								<% var month = ['Janv', 'Févr', 'Mars', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc'] %>
+								<time datetime="<%= date_start.substr(1, 10) %>">
+									<span class="day"><%= date_start.substr(9, 2) %></span>
+									<span class="month"><%= month[parseInt(date_start.substr(6, 2)) - 1] %></span>
+									<span class="year"><%= date_start.substr(1, 4) %></span>
+									<span class="time"><%= date_start.substr(12, 7) %></span>
+								</time>
+								<img alt="<%= event.name %>" src="<%= event.url_picture %>"/>
+								<div class="info">
+									<h2 class="title"><%= event.name %></h2>
+									<p class="desc">Début à <%= date_start.substr(12, 5) %> - 
+										<% if (date_end != null) { %>
+											   Fin le <%= date_end.substr(9, 2) %> <%= month[parseInt(date_end.substr(6, 2)) - 1] %> <%= date_end.substr(1, 4) %> à <%= date_end.substr(12, 5) %>
+										<% } %>
+									</p>
+								</div>
+							</li>
+						<% }) %>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- feed list -->
+	<div class="col-md-6" style="padding-right:20pt;">
+		<div class="container">
+			<div class="panel-body">
+				<div class="ibox-content">
+					<div class="feed-activity-list">
+
+						<div class="feed-element">
+							<a href="#" class="pull-left">
+								<img alt="image" class="img-circle" src="https://bootdey.com/img/Content/avatar/avatar1.png">
+							</a>
+										
+							<div class="media-body ">
+								<small class="pull-right text-navy">5m ago</small>
+								<strong>Vaughn Oremortsac</strong> started following <strong>Oscar Adrian Acosta</strong>.<br>
+								<small class="text-muted">Today 6:19 am - 12.04.2015</small>
+								
+								<div class="actions">
+								<a class="btn btn-xs btn-white"><i class="fa fa-thumbs-up"></i> Like </a>
+								<a class="btn btn-xs btn-danger"><i class="fa fa-heart"></i> Love</a>
+								</div>
+							</div>
+						</div>
+
+						<div class="feed-element">
+							<a href="#" class="pull-left">
+							<img alt="image" class="img-circle" src="https://bootdey.com/img/Content/avatar/avatar2.png">
+							</a>
+							
+							<div class="media-body ">
+								<small class="pull-right">30m ago</small>
+								<strong>Spider Rodas</strong> purchased Ebook pro. <br>
+								<small class="text-muted">Today 8:52 pm - 1.06.2015</small>
+							</div>
+						</div>
+		
+						<div class="feed-element">
+							<a href="#" class="pull-left">
+							<img alt="image" class="img-circle" src="https://bootdey.com/img/Content/avatar/avatar3.png">
+							</a>
+							
+							<div class="media-body ">
+								<small class="pull-right">2h ago</small>
+								<strong>Pollet Piedad</strong> posted message on <strong>Aifa Agpasa</strong> site. <br>
+								<small class="text-muted">Today 2:10 pm - 12.06.2016</small>
+								<div class="well">
+								Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s. Over the years, sometimes by accident, sometimes on purpose (injected humour and the like).
+								</div>
+								<div class="pull-right">
+									<a class="btn btn-xs btn-white"><i class="fa fa-thumbs-up"></i> Like </a>
+									<a class="btn btn-xs btn-white"><i class="fa fa-heart"></i> Love</a>
+									<a class="btn btn-xs btn-primary"><i class="fa fa-pencil"></i> Message</a>
+								</div>
+							</div>
+						</div>
+
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

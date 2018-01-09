@@ -9,7 +9,7 @@ var layouts = require('express-ejs-layouts');
 
 /* stock routes */
 var index = require('./routes/index');
-var ionis = require('./routes/ionis');
+var admin = require('./routes/admin');
 var facebook = require('./routes/facebook');
 var dashboard = require('./routes/dashboard');
 
@@ -59,7 +59,6 @@ passport.use(new FacebookStrategy(
   },
   function(accessToken, refreshToken, profile, done) {
     process.nextTick(function() {
-      console.log("inside");
       return (done(null, profile));
     });
   }
@@ -68,7 +67,7 @@ passport.use(new FacebookStrategy(
 /* routes setup */
 app.use('/', index);
 app.use('/fb', facebook);
-app.use('/ionis', ionis);
+app.use('/admin', admin);
 app.use('/dashboard', dashboard);
 
 /* catch 404 and forward to error handler */
