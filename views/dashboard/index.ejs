@@ -46,56 +46,27 @@ Dashboard
 			<div class="panel-body">
 				<div class="ibox-content">
 					<div class="feed-activity-list">
-
+                        <% feed.forEach(function (unit) { %>
 						<div class="feed-element">
 							<a href="#" class="pull-left">
-								<img alt="image" class="img-circle" src="https://bootdey.com/img/Content/avatar/avatar1.png">
-							</a>
-										
-							<div class="media-body ">
-								<small class="pull-right text-navy">5m ago</small>
-								<strong>Vaughn Oremortsac</strong> started following <strong>Oscar Adrian Acosta</strong>.<br>
-								<small class="text-muted">Today 6:19 am - 12.04.2015</small>
-								
-								<div class="actions">
-								<a class="btn btn-xs btn-white"><i class="fa fa-thumbs-up"></i> Like </a>
-								<a class="btn btn-xs btn-danger"><i class="fa fa-heart"></i> Love</a>
-								</div>
-							</div>
-						</div>
-
-						<div class="feed-element">
-							<a href="#" class="pull-left">
-							<img alt="image" class="img-circle" src="https://bootdey.com/img/Content/avatar/avatar2.png">
+								<img alt="image" class="img-circle" src="https://bootdey.com/img/Content/avatar/avatar3.png">
 							</a>
 							
 							<div class="media-body ">
-								<small class="pull-right">30m ago</small>
-								<strong>Spider Rodas</strong> purchased Ebook pro. <br>
-								<small class="text-muted">Today 8:52 pm - 1.06.2015</small>
-							</div>
-						</div>
-		
-						<div class="feed-element">
-							<a href="#" class="pull-left">
-							<img alt="image" class="img-circle" src="https://bootdey.com/img/Content/avatar/avatar3.png">
-							</a>
-							
-							<div class="media-body ">
-								<small class="pull-right">2h ago</small>
-								<strong>Pollet Piedad</strong> posted message on <strong>Aifa Agpasa</strong> site. <br>
-								<small class="text-muted">Today 2:10 pm - 12.06.2016</small>
+                                <% var date_created = unit.created_time.substr(0, 10) %>
+                                <% var time_created = unit.created_time.substr(11, 5) %>
+                                <% var date_feed = new Date(date_created + " " + time_created) %>
+								<% var current_date = new Date() %>
+								<% var diff = current_date - date_feed %>
+								<small class="pull-right"><%= Math.round(diff / (1000 * 60 * 60 * 24)) %> ago</small>
+								<strong><%= unit.story %></strong> <br>
+								<small class="text-muted"><%= time_created %> - <%= date_created %></small>
 								<div class="well">
-								Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s. Over the years, sometimes by accident, sometimes on purpose (injected humour and the like).
-								</div>
-								<div class="pull-right">
-									<a class="btn btn-xs btn-white"><i class="fa fa-thumbs-up"></i> Like </a>
-									<a class="btn btn-xs btn-white"><i class="fa fa-heart"></i> Love</a>
-									<a class="btn btn-xs btn-primary"><i class="fa fa-pencil"></i> Message</a>
+									<%= unit.message  %>
 								</div>
 							</div>
 						</div>
-
+                        <% }) %>
 					</div>
 				</div>
 			</div>
