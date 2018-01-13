@@ -6,6 +6,13 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var layouts = require('express-ejs-layouts');
+var mongoose = require('mongoose');
+
+/* Database */
+mongoose.connect('mongodb://localhost:27017/followionis', {
+  useMongoClient: true,
+});
+mongoose.Promise = require('bluebird');
 
 /* stock routes */
 var index = require('./routes/index');

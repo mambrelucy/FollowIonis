@@ -1,16 +1,24 @@
-var express = require('express');
-var router = express.Router();
-var rp = require('request-promise');
-var fs = require('fs');
-var config = require('../config/auth');
+const express = require('express');
+const router = express.Router();
+const rp = require('request-promise');
+const fs = require('fs');
+const util = require('util');
 
-var EVENTS_FILE = "events_data.txt";
-var FEED_FILE = "feed_data.txt";
+const config = require('../config/auth');
 
-var PAGE_BDE_EPITECH = "bde.epitech.stg";
+const mongoose = require('mongoose');
+
+var db = mongoose.createConnection('localhost', 'followionis');
+
+var Association = require('../models/Association');
+var Event = require('../models/Event');
+var Feed = require('../models/Feed');
+
+/* Get All Associations */
+var get_associations = fs.readFileSync("files/associations_pages.txt");
+var associations = JSON.parse(get_associations)["data"];
 
 /* GET dashboard home */
-
 router.get('/', function(req, res, next) {
 
   /* Get access token */
@@ -23,64 +31,240 @@ router.get('/', function(req, res, next) {
 
       if (json.access_token) {
 
-        /* Get data pages */
-        var url_access_data_feed = "https://graph.facebook.com/v2.11/" + PAGE_BDE_EPITECH + "/posts/?access_token=" + json.access_token;
+        /* Fill informations associations to MongoDb */
+        var getUrlPictureProfile = function asyncGetUrlPictureProfile(association) {
+          return new Promise ((resolve, reject) => {
+            var url_access_event_picture = "https://graph.facebook.com/v2.11/" + association.name + "/picture/?access_token=" + json.access_token;
+            rp({ uri: url_access_event_picture, resolveWithFullResponse: true })
+              .then(res => {
+                Association.find({ name_fb: association.name }, function (err, data) {
+                  if (err) throw err;
+                  if (!(data.length)) {
+                    var asso = new Association({
+                      name_fb: association.name,
+                      image_url: res["request"]["uri"]["href"]
+                    });
+                    var promise = asso.save(function(err) {
+                      if (err) throw err;
+                    })
+                    promise.then(function(doc){}).catch(function(err){});         
+                  }
+                });
+                resolve(association);
+              })
+              .catch(err => {
+                reject(err);
+              })
+          });
+        };
 
-        rp(url_access_data_feed)
-          .then(data => {
-            fs.writeFileSync(FEED_FILE, data, "UTF-8");
+        var actions = associations.map(getUrlPictureProfile);
+
+        var result = Promise.all(actions);
+
+        result
+          .then((data_asso) => {
             
-            /* Get event */
-            var url_access_data_events = "https://graph.facebook.com/v2.11/" + PAGE_BDE_EPITECH + "/events/?access_token=" + json.access_token;
+            /* Find Id Association in Database */
+            var findIdAssociation = function asyncFindIdAssociation(association) {
+              return new Promise ((resolve, reject) => {
+                Association.find({ name_fb: association.name }, function (err, data) {
+                  if (err) throw err;
+                  if (data.length) {
+                    data.forEach(function (db) {
+                      association.db_id_asso = db._id;
+                      resolve(association);
+                    });
+                  } else {
+                    reject(err);
+                  }
+                });
+              });
+            };
 
-            rp(url_access_data_events)
-              .then(data => {
-                fs.writeFileSync(EVENTS_FILE, data, "UTF-8");
+            var actions = associations.map(findIdAssociation);
 
-                var events_data = fs.readFileSync(EVENTS_FILE);
-                var feed_data = fs.readFileSync(FEED_FILE);
+            var result = Promise.all(actions);
 
-                var events_data_obj = JSON.parse(events_data)["data"];
-                var feed_data_obj = JSON.parse(feed_data)["data"];
-                
-                /* Get picture event */
-
-                var fn = function asyncGetUrlPicture(event) {
-                  return new Promise((resolve, reject) => {
-                    var url_access_event_picture = "https://graph.facebook.com/v2.11/" + event.id + "/picture/?access_token=" + json.access_token;
-                    rp({ uri: url_access_event_picture, resolveWithFullResponse: true })
+            result
+              .then((data_asso) => {
+    
+                /* Store feed data */
+                var storeFeedAssociation = function asyncStoreFeedAssociation(association) {
+                  return new Promise ((resolve, reject) => {
+                    var url_access_data_feed = "https://graph.facebook.com/v2.11/" + association.name + "/posts/?access_token=" + json.access_token;
+                    rp(url_access_data_feed)
                       .then(res => {
-                        event.url_picture = res["request"]["uri"]["href"];                 
-                        resolve(event);
+                        var data = JSON.parse(res)["data"];
+                        data.forEach(function (item) {
+                          Feed.find({ story: item.message }, function (err, db) {
+                            if (!(db.length)) {
+                              if (!(item.story)) {
+                                item.story = "News !";
+                              }
+    
+                              var feed = new Feed({
+                                story: item.story,
+                                message: item.message,
+                                created_time: new Date(item.created_time),
+                                id_association: association.db_id_asso
+                              });
+                              var promise = feed.save(function(err) {
+                                if (err) throw err;
+                              })
+                              promise.then(function(doc){}).catch(function(err){});       
+                            }
+                          });
+                        });
+                        resolve(data);
                       })
                       .catch(err => {
                         reject(err);
                       })
                   });
                 };
-
-                var actions = events_data_obj.map(fn);
-
+    
+                var actions = associations.map(storeFeedAssociation);
+    
                 var result = Promise.all(actions);
-
+    
                 result
-                  .then((data) => {
-                    res.render('dashboard/index', { 
-                      events: events_data_obj,
-                      feed: feed_data_obj
-                    });
+                  .then((data_feed) => {
+    
+                    /* Store event data */
+                    var storeEventAssociation = function asyncStoreEventAssociation(association) {
+                      return new Promise ((resolve, reject) => {
+                        var url_access_data_events = "https://graph.facebook.com/v2.11/" + association.name + "/events/?access_token=" + json.access_token;
+                        rp(url_access_data_events)
+                          .then(res => {
+                            var data = JSON.parse(res)["data"];
+                            data.forEach(function (item) {
+                              Feed.find({ story: item.name }, function (err, db) {
+                                if (!(db.length)) {
+    
+                                  /* Get Picture event */
+                                  var url_access_event_picture = "https://graph.facebook.com/v2.11/" + item.id + "/picture/?access_token=" + json.access_token;
+                                  rp({ uri: url_access_event_picture, resolveWithFullResponse: true })
+                                    .then(res => {
+                                      if (!(item.end_time)) {
+                                        var event = new Event({
+                                          name: item.name,
+                                          image_url: res["request"]["uri"]["href"],
+                                          start_time: new Date(item.start_time),
+                                          id_association: association.db_id_asso
+                                        });
+                                      } else {
+                                        var event = new Event({
+                                          name: item.name,
+                                          image_url: res["request"]["uri"]["href"],
+                                          start_time: new Date(item.start_time),
+                                          end_time: new Date(item.end_time),
+                                          id_association: association.db_id_asso
+                                        });
+                                      }                                            
+                                      var promise = event.save(function(err) {
+                                        if (err) throw err;
+                                      })
+                                      promise.then(function(doc){}).catch(function(err){});
+    
+                                    })
+                                    .catch(err => {
+                                      reject(err);
+                                    })     
+                                }
+                              });
+                            });
+                            resolve(data);
+                          })
+                          .catch(err => {
+                            reject(err);
+                          })
+                      });
+                    };
+                    var actions = associations.map(storeEventAssociation);
+    
+                    var result = Promise.all(actions);
+                    
+                    result
+                      .then((data_event) => {
+                        Feed.find({}, function (err, feeds) {
+                          if (err) throw err;
+
+                          Event.find({}, function(err, events) {
+                            if (err) throw err;
+
+                            res.render('dashboard/index', { 
+                              events: events,
+                              feeds: feeds
+                            });
+                          });
+                        });
+                      })
+                      .catch(err => { throw err }) //end of store event data
+    
                   })
-                  .catch(err => {})
+                  .catch(err => { throw err }) //end of store feed data
+
 
               })
-              .catch(err => {})
+              .catch((err) => { throw err }) //end of find id association in database
+
+
 
           })
-          .catch(err => {});
+          .catch(err => { throw err }) //end of fill informations associations to mongodb
+
+
+
+        
+          // var url_access_data_events = "https://graph.facebook.com/v2.11/" + associations[0].name + "/events/?access_token=" + json.access_token;
+
+          // rp(url_access_data_events)
+          //   .then(data => {
+          //     fs.writeFileSync(EVENTS_FILE, data, "UTF-8");
+          //     var events_data = fs.readFileSync(EVENTS_FILE);
+          //     var feed_data = fs.readFileSync(FEED_FILE);
+
+          //     var events_data_obj = JSON.parse(events_data)["data"];
+          //     var feed_data_obj = JSON.parse(feed_data)["data"];
+              
+              /* Get picture event */
+
+              // var getUrlPicture = function asyncGetUrlPicture(event) {
+              //   return new Promise((resolve, reject) => {
+              //     var url_access_event_picture = "https://graph.facebook.com/v2.11/" + event.id + "/picture/?access_token=" + json.access_token;
+              //     rp({ uri: url_access_event_picture, resolveWithFullResponse: true })
+              //       .then(res => {
+              //         event.url_picture = res["request"]["uri"]["href"];                 
+              //         resolve(event);
+              //       })
+              //       .catch(err => {
+              //         reject(err);
+              //       })
+              //   });
+              // };
+
+              // var actions = events_data_obj.map(getUrlPicture);
+
+              // var result = Promise.all(actions);
+
+              // result
+              //   .then((data) => {
+              //     res.render('dashboard/index', { 
+              //       events: events_data_obj,
+              //       feed: feed_data_obj
+              //     });
+              //   })
+              //   .catch(err => { throw err })
+
+              // })
+
+      } else {
+        console.log("Json access token doesn't exists");
       }
 
     })
-    .catch(err => {});
+    .catch(err => { console.log("patate"); throw err });
 });
 
 module.exports = router;
