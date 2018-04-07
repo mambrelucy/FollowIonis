@@ -6,7 +6,7 @@ var EventSchema = new Schema({
     image_url: { type: String, required: true },
     start_time: { type: Date, required: true },
     end_time: { type: Date },
-    id_association: { type: Object, required: true },
+    id_association: { type: String, required: true },
 });
 
 module.exports = mongoose.model('Event', EventSchema);

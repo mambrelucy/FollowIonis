@@ -8,7 +8,7 @@ const config = require('../config/auth');
 
 const mongoose = require('mongoose');
 
-var db = mongoose.createConnection('localhost', 'followionis');
+mongoose.createConnection('localhost', 'followionis');
 
 var Association = require('../models/Association');
 var Event = require('../models/Event');
@@ -69,10 +69,11 @@ router.get('/', function(req, res, next) {
             var findIdAssociation = function asyncFindIdAssociation(association) {
               return new Promise ((resolve, reject) => {
                 Association.find({ name_fb: association.name }, function (err, data) {
+                  console.log("data : " + JSON.stringify(data));
                   if (err) throw err;
                   if (data.length) {
                     data.forEach(function (db) {
-                      association.db_id_asso = db._id;
+                      association.db_id_asso = db._id.toHexString();
                       resolve(association);
                     });
                   } else {
@@ -88,7 +89,7 @@ router.get('/', function(req, res, next) {
 
             result
               .then((data_asso) => {
-    
+
                 /* Store feed data */
                 var storeFeedAssociation = function asyncStoreFeedAssociation(association) {
                   return new Promise ((resolve, reject) => {
@@ -97,12 +98,12 @@ router.get('/', function(req, res, next) {
                       .then(res => {
                         var data = JSON.parse(res)["data"];
                         data.forEach(function (item) {
-                          Feed.find({ story: item.message }, function (err, db) {
+                          Feed.find({ message: item.message }, function (err, db) {
+                            if (err) throw err;
                             if (!(db.length)) {
                               if (!(item.story)) {
                                 item.story = "News !";
                               }
-    
                               var feed = new Feed({
                                 story: item.story,
                                 message: item.message,
@@ -139,7 +140,8 @@ router.get('/', function(req, res, next) {
                           .then(res => {
                             var data = JSON.parse(res)["data"];
                             data.forEach(function (item) {
-                              Feed.find({ story: item.name }, function (err, db) {
+                              Event.find({ story: item.name }, function (err, db) {
+                                if (err) throw err;
                                 if (!(db.length)) {
     
                                   /* Get Picture event */
@@ -187,15 +189,18 @@ router.get('/', function(req, res, next) {
                     
                     result
                       .then((data_event) => {
-                        Feed.find({}, function (err, feeds) {
-                          if (err) throw err;
-
-                          Event.find({}, function(err, events) {
+                        Association.find({}, function(err, associations) {
+                          Feed.find({}).sort({created_time: 'desc'}).exec(function (err, feeds) {
                             if (err) throw err;
-
-                            res.render('dashboard/index', { 
-                              events: events,
-                              feeds: feeds
+  
+                            Event.find({}).sort({start_time: 'desc'}).exec(function(err, events) {
+                              if (err) throw err;
+  
+                              res.render('dashboard/index', {
+                                associations: associations, 
+                                events: events,
+                                feeds: feeds
+                              });
                             });
                           });
                         });
@@ -203,68 +208,24 @@ router.get('/', function(req, res, next) {
                       .catch(err => { throw err }) //end of store event data
     
                   })
-                  .catch(err => { throw err }) //end of store feed data
+                  .catch(err => { console.log("Store feed data"); throw err }) //end of store feed data
 
 
               })
-              .catch((err) => { throw err }) //end of find id association in database
+              .catch(err => { console.log("Find id association in database"); throw err }) //end of find id association in database
 
 
 
           })
-          .catch(err => { throw err }) //end of fill informations associations to mongodb
+          .catch(err => { console.log("Fill informations associations to mongodb"); throw err }) //end of fill informations associations to mongodb
 
-
-
-        
-          // var url_access_data_events = "https://graph.facebook.com/v2.11/" + associations[0].name + "/events/?access_token=" + json.access_token;
-
-          // rp(url_access_data_events)
-          //   .then(data => {
-          //     fs.writeFileSync(EVENTS_FILE, data, "UTF-8");
-          //     var events_data = fs.readFileSync(EVENTS_FILE);
-          //     var feed_data = fs.readFileSync(FEED_FILE);
-
-          //     var events_data_obj = JSON.parse(events_data)["data"];
-          //     var feed_data_obj = JSON.parse(feed_data)["data"];
-              
-              /* Get picture event */
-
-              // var getUrlPicture = function asyncGetUrlPicture(event) {
-              //   return new Promise((resolve, reject) => {
-              //     var url_access_event_picture = "https://graph.facebook.com/v2.11/" + event.id + "/picture/?access_token=" + json.access_token;
-              //     rp({ uri: url_access_event_picture, resolveWithFullResponse: true })
-              //       .then(res => {
-              //         event.url_picture = res["request"]["uri"]["href"];                 
-              //         resolve(event);
-              //       })
-              //       .catch(err => {
-              //         reject(err);
-              //       })
-              //   });
-              // };
-
-              // var actions = events_data_obj.map(getUrlPicture);
-
-              // var result = Promise.all(actions);
-
-              // result
-              //   .then((data) => {
-              //     res.render('dashboard/index', { 
-              //       events: events_data_obj,
-              //       feed: feed_data_obj
-              //     });
-              //   })
-              //   .catch(err => { throw err })
-
-              // })
 
       } else {
         console.log("Json access token doesn't exists");
       }
 
     })
-    .catch(err => { console.log("patate"); throw err });
+    .catch(err => { console.log("end"); throw err });
 });
 
 module.exports = router;

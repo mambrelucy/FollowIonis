@@ -14,7 +14,7 @@ Dashboard
 					<ul class="event-list">
 						<% events.forEach(function (event) { %>
 							<li>
-								<% var month = ["Jan", "Fév", "Mars", "Avr", "Mai", "Juin", "Juil", "Août", "Sept", "Oct", "Nov", "Déc"] %>
+								<% const month = ["Jan", "Fév", "Mars", "Avr", "Mai", "Juin", "Juil", "Août", "Sept", "Oct", "Nov", "Déc"] %>
 								<time datetime="<%= event.start_time.toJSON() %>">
 									<span class="day"><%= event.start_time.getDate() %></span>
 									<span class="month"><%= month[event.start_time.getMonth()] %></span>
@@ -23,12 +23,12 @@ Dashboard
 								</time>
 								<img alt="<%= event.name %>" src="<%= event.image_url %>"/>
 								<div class="info">
+									<% let date_start = event.start_time.toString() %>
 									<h2 class="title"><%= event.name %></h2>
-									<p class="desc">Début à <% if (event.start_time.getHours() == 0) { %>0<% } %><%= event.start_time.getHours() %>:
-										<% if (event.start_time.getMinutes() == 0) { %>0<% } %><%= event.start_time.getMinutes() %>
+									<p class="desc">Début à <%= date_start.substr(15, 6) %>
 										<% if (event.end_time != null) { %>
-												Fin à <%= event.end_time.getHours() %>:
-											   	<% if (event.end_time.getMinutes() == 0) { %>0<% } %><%= event.end_time.getMinutes() %>
+											<% let date_end = event.end_time.toString() %>
+												jusqu'à <%= date_end.substr(15, 6) %>
 										<% } %>
 									</p>
 								</div>
@@ -49,19 +49,26 @@ Dashboard
                         <% feeds.forEach(function (feed) { %>
 						<div class="feed-element">
 							<a href="#" class="pull-left">
-								<img alt="image" class="img-circle" src="https://scontent.xx.fbcdn.net/v/t1.0-1/p100x100/23755485_1724939187547448_3569921464217410590_n.png?oh=ea98ee67c9b69c43cd6b59414cd718d8&oe=5AF937D3">
+								<% associations.forEach(function (association) { %>
+									<% if (association._id.toHexString() === feed.id_association) { %>
+										<img alt="image" class="img-circle" src="<%= association.image_url %>">
+									<% } %>
+								<% }) %>
 							</a>							
 							<div class="media-body ">
-								<% var current_date = new Date() %>
-								<% var diff = current_date - feed.created_time.getTime() %>
-								<small class="pull-right"><%= Math.round(diff / (1000 * 60 * 60 * 24)) %> days ago</small>
+								<small class="pull-right">
+									<!-- put number of day spent -->
+								</small>
 								
 								<% if (feed.story) { %>
 									<strong><%= feed.story %></strong>
 								<% } %>
 								<br>
-								<small class="text-muted"><% if (feed.created_time.getHours() == 0) { %>0<% } %><%= feed.created_time.getHours() %>:
-									<% if (feed.created_time.getMinutes() == 0) { %>0<% } %><%= feed.created_time.getMinutes() %>
+								<small class="text-muted">
+									<% const month = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"] %>
+									<% let date = feed.created_time.toString() %>
+									Le <%= feed.created_time.getDay() %> <%= month[feed.created_time.getMonth()] %> <%= feed.created_time.getFullYear() %>
+									à <%= date.substr(15, 6) %>
 								</small>
 								<div class="well">
 									<%= feed.message  %>
